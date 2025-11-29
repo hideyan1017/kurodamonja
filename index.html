@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="https://lh6.googleusercontent.com/BE2wasp2QiugvFlJkY-HJvEdT_9kXPw5p3HkIy0ELVf9Q1b21HbLzcA4mQEL8N9vskSuQLhG52QyrQHyP_7n7BWsVTF3KB4uzqimyliV8wUofHPQ5CprLdBSJ1sOoXdjXn51i1jXq_-ucFIi9ZR49KGwgQ=s2048">
+<title>クロダモンジャ</title>
+  <meta property="og:description" content="12枚の画像を入れてクロダモンジャを楽しもう" />
+<meta property="https://lh7-rt.googleusercontent.com/slidesz/AGV_vUcYtP2rj0qo8VZzLrL6rAaNHwOD2rTMFHXsa72fTuTqk2vCGEEmpxqGJwTv0xwpAo7qynMj7_N1sxUpqLoLQa_8Kc3iOPddepyMiKCWA2sukNZ5YeWAg96PT1VCDdaaQj3oPnec9ly5nCpOwtxpuse2_nseIg=nw?key=ZJ7yYlUEkqSrLRLtMyzu_A" />
+<style>
+  :root {
+    --main: #00d4ff;
+    --accent: #ff2e63;
+    --bg: #0a0e17;
+    --text: #e0f7ff;
+  }
+  * {margin:0;padding:0;box-sizing:border-box;}
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+  }
+
+  #startScreen {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 40px; z-index: 100; text-align: center;
+  }
+
+  #counter {
+    position: fixed; top: 0; left: 0; right: 0;
+    padding: 18px 0; text-align: center; font-size: 46px;
+    background: rgba(0,0,0,0.8); backdrop-filter: blur(12px);
+    z-index: 90; text-shadow: 0 0 20px #00d4ff;
+  }
+
+  .container {
+    min-height: 100vh;
+    padding: 100px 20px 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* サムネイルエリア：最初だけ表示 */
+  #thumbnailArea {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin: 30px auto;
+    max-width: 95vw;
+    padding: 10px;
+    opacity: 0;
+    transition: opacity 0.8s;
+  }
+  #thumbnailArea.show { opacity: 1; }
+  .thumb {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 14px;
+    object-fit: cover;
+    box-shadow: 0 6px 20px rgba(0,212,255,0.5);
+    border: 3px solid #00d4ff;
+  }
+
+  #photoContainer {
+    width: 88vmin;
+    height: 88vmin;
+    max-width: 92vw;
+    max-height: 92vw;
+    border-radius: 44px;
+    overflow: hidden;
+    box-shadow: 0 0 160px rgba(0,212,255,0.6);
+    background: #111;
+    margin: 20px 0;
+    flex-shrink: 0;
+  }
+  #preview {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: opacity 0.6s;
+  }
+
+  .buttonArea {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 50px;
+    width: 100%;
+    padding: 0 20px;
+  }
+
+  #scoreArea {
+    display: flex;
+    gap: 26px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .personBtn {
+    width: 120px; height: 120px;
+    border-radius: 50%; background: var(--main);
+    color: #000; font-size: 68px; font-weight: bold;
+    border: none; cursor: pointer;
+    box-shadow: 0 18px 45px #00d4ff90;
+    transition: all 0.3s;
+  }
+  .personBtn:active {transform: scale(0.88);}
+
+  #nextBtn {
+    padding: 32px 140px;
+    font-size: 62px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 60px;
+    cursor: pointer;
+    box-shadow: 0 25px 60px #ff2e6390;
+    font-weight: bold;
+    letter-spacing: 3px;
+  }
+
+  #resultScreen {
+    position: fixed; inset: 0; background: var(--bg);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    gap: 60px; z-index: 200; text-align: center;
+    padding: 20px;
+  }
+  #ranking {font-size: 74px; line-height: 1.8;}
+  .rank1 {color:#ffd700; font-size:110px !important; text-shadow:0 0 80px gold;}
+  .rank2 {color:#c0c0c0; font-size:92px;}
+  .rank3 {color:#cd7f32; font-size:86px;}
+</style>
+</head>
+<body>
+
+<div id="startScreen">
+  <h1 style="font-size:60px;">参加人数を入力</h1>
+  <input type="number" id="peopleInput" min="2" max="12" value="4" autofocus
+         style="padding:20px;font-size:100px;width:240px;text-align:center;background:#0004;border:5px solid #333;border-radius:25px;color:var(--main);">
+  <button style="margin-top:40px;padding:24px 100px;font-size:48px;background:var(--accent);color:white;border:none;border-radius:60px;" onclick="setupGame()">
+    スタート
+  </button>
+</div>
+
+<div id="counter">第1回 / 全48回（1枚目）</div>
+
+<div class="container">
+  <!-- ここに最初だけ12枚サムネイル -->
+  <div id="thumbnailArea"></div>
+
+  <div id="photoContainer">
+    <img id="preview" src="">
+  </div>
+
+  <div class="buttonArea">
+    <div id="scoreArea"></div>
+    <button id="nextBtn" style="display:none;">次へ</button>
+  </div>
+</div>
+
+<div id="resultScreen">
+  <h2 style="font-size:90px;">最終結果</h2>
+  <div id="ranking"></div>
+  <button style="margin-top:70px;padding:25px 130px;font-size:50px;background:var(--main);color:#000;border:none;border-radius:60px;" onclick="location.reload()">
+    もう一度遊ぶ
+  </button>
+</div>
+
+<script>
+let peopleCount = 0;
+let images = [];
+let scores = [];
+let currentCount = 1;
+let round = 1;
+
+function setupGame() {
+  peopleCount = parseInt(document.getElementById('peopleInput').value);
+  if (peopleCount < 2 || peopleCount > 12) return alert("2〜12人で入力してください");
+
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.multiple = true;
+  input.accept = 'image/*';
+  input.onchange = e => {
+    const files = Array.from(e.target.files);
+    if (files.length !== 12) return alert(`12枚ちょうど選んでください！（今${files.length}枚）`);
+
+    images = files.map(file => URL.createObjectURL(file));
+    scores = Array(peopleCount).fill(0);
+
+    // ここからが大事！
+    const thumbArea = document.getElementById('thumbnailArea');
+    thumbArea.innerHTML = '';
+    images.forEach(src => {
+      const img = document.createElement('img');
+      img.src = src;
+      img.className = 'thumb';
+      thumbArea.appendChild(img);
+    });
+
+    // プレイヤーボタン作成
+    const scoreArea = document.getElementById('scoreArea');
+    scoreArea.innerHTML = '';
+    for (let i = 0; i < peopleCount; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'personBtn';
+      btn.textContent = String.fromCharCode(65 + i);
+      btn.onclick = () => getPoint(i);
+      scoreArea.appendChild(btn);
+    }
+
+    // スタート画面消して、サムネイルを1.2秒だけ見せる
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('nextBtn').style.display = 'block';
+    thumbArea.classList.add('show');  // フェードイン
+
+    // 3秒後にサムネイル消してゲーム開始！
+    setTimeout(() => {
+      thumbArea.style.opacity = '0';
+      setTimeout(() => {
+        thumbArea.innerHTML = '';  // 完全に削除してスッキリ
+        startGame();
+      }, 800);
+    }, 3000);  // 3秒見せる（お好みで2.5〜4秒に変更可）
+  };
+  input.click();
+}
+
+function startGame() {
+  round = 1;
+  currentCount = 1;
+  updateCounter();
+  showRandomPhoto();
+}
+
+function showRandomPhoto() {
+  const idx = Math.floor(Math.random() * 12);
+  const preview = document.getElementById('preview');
+  preview.style.opacity = 0;
+  setTimeout(() => {
+    preview.src = images[idx];
+    preview.style.opacity = 1;
+  }, 350);
+}
+
+function getPoint(personIndex) {
+  scores[personIndex] += currentCount;
+  alert(`${String.fromCharCode(65 + personIndex)} さんが ${currentCount}点 獲得！`);
+  currentCount = 0;
+  updateCounter();
+}
+
+function updateCounter() {
+  document.getElementById('counter').textContent = 
+    `第${round}回 / 全48回（${currentCount === 0 ? '得点済' : currentCount + '枚目'}）`;
+}
+
+document.getElementById('nextBtn').onclick = () => {
+  round++;
+  if (round > 48) {
+    showResult();
+    return;
+  }
+  currentCount = currentCount === 0 ? 1 : currentCount + 1;
+  updateCounter();
+  showRandomPhoto();
+};
+
+function showResult() {
+  document.getElementById('nextBtn').style.display = 'none';
+  document.querySelector('.buttonArea').style.display = 'none';
+
+  const ranked = scores.map((score, i) => ({
+    person: String.fromCharCode(65 + i),
+    score
+  })).sort((a, b) => b.score - a.score);
+
+  let html = '';
+  ranked.forEach((r, idx) => {
+    const cls = idx === 0 ? 'rank1' : idx === 1 ? 'rank2' : idx === 2 ? 'rank3' : '';
+    html += `<div class="${cls}">${r.person}さん　${r.score}点</div>`;
+  });
+  document.getElementById('ranking').innerHTML = html;
+
+  document.getElementById('resultScreen').style.display = 'flex';
+}
+</script>
+</body>
+</html>
