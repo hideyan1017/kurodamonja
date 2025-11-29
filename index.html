@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="https://lh6.googleusercontent.com/BE2wasp2QiugvFlJkY-HJvEdT_9kXPw5p3HkIy0ELVf9Q1b21HbLzcA4mQEL8N9vskSuQLhG52QyrQHyP_7n7BWsVTF3KB4uzqimyliV8wUofHPQ5CprLdBSJ1sOoXdjXn51i1jXq_-ucFIi9ZR49KGwgQ=s2048">
+<link rel="icon" href="https://lh6.googleusercontent.com/BE2wasp2QiugvFlJkY-HJvEdT_9kXPw5p3HkIy0ELVf9Q1b21HbLzcA4mQEL8N9vskSuQLhG52QyrQHyP_7n7BWsVTF3KB4uzqimyliV8wUofHPQ5CprLdBSJ1sOoXdjXn51i1jXq_-ucFIi9ZR49KGwgQ=s2048">
 <title>クロダモンジャ</title>
-  <meta property="og:description" content="12枚の画像を入れてクロダモンジャを楽しもう" />
-<meta property="https://lh7-rt.googleusercontent.com/slidesz/AGV_vUcYtP2rj0qo8VZzLrL6rAaNHwOD2rTMFHXsa72fTuTqk2vCGEEmpxqGJwTv0xwpAo7qynMj7_N1sxUpqLoLQa_8Kc3iOPddepyMiKCWA2sukNZ5YeWAg96PT1VCDdaaQj3oPnec9ly5nCpOwtxpuse2_nseIg=nw?key=ZJ7yYlUEkqSrLRLtMyzu_A" />
+<meta property="og:description" content="12枚の画像を入れてクロダモンジャを楽しもう" />
+  <meta property="https://lh7-rt.googleusercontent.com/slidesz/AGV_vUcYtP2rj0qo8VZzLrL6rAaNHwOD2rTMFHXsa72fTuTqk2vCGEEmpxqGJwTv0xwpAo7qynMj7_N1sxUpqLoLQa_8Kc3iOPddepyMiKCWA2sukNZ5YeWAg96PT1VCDdaaQj3oPnec9ly5nCpOwtxpuse2_nseIg=nw?key=ZJ7yYlUEkqSrLRLtMyzu_A" />
 <style>
   :root {
     --main: #00d4ff;
@@ -46,20 +46,21 @@
   #thumbnailArea {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 12px;
+    gap: 10px;
     margin: 30px auto;
     max-width: 95vw;
+    padding: 10px;
     opacity: 0;
-    transition: opacity 1s;
+    transition: opacity 0.8s;
   }
   #thumbnailArea.show { opacity: 1; }
   .thumb {
     width: 100%;
     aspect-ratio: 1;
-    border-radius: 16px;
+    border-radius: 14px;
     object-fit: cover;
-    box-shadow: 0 8px 25px rgba(0,212,255,0.6);
-    border: 4px solid #00d4ff;
+    box-shadow: 0 6px 20px rgba(0,212,255,0.5);
+    border: 3px solid #00d4ff;
   }
 
   #photoContainer {
@@ -72,7 +73,9 @@
     box-shadow: 0 0 160px rgba(0,212,255,0.6);
     background: #111;
     margin: 20px 0;
+    flex-shrink: 0;
   }
+
   #preview {
     width: 100%; height: 100%; object-fit: cover;
     transition: opacity 0.6s;
@@ -93,6 +96,7 @@
     flex-wrap: wrap;
     justify-content: center;
   }
+
   .personBtn {
     width: 120px; height: 120px;
     border-radius: 50%; background: var(--main);
@@ -122,6 +126,7 @@
     gap: 60px; z-index: 200; text-align: center;
     padding: 20px;
   }
+
   #ranking {font-size: 74px; line-height: 1.8;}
   .rank1 {color:#ffd700; font-size:110px !important; text-shadow:0 0 80px gold;}
   .rank2 {color:#c0c0c0; font-size:92px;}
@@ -137,7 +142,7 @@
   <button style="margin-top:40px;padding:24px 100px;font-size:48px;background:var(--accent);color:white;border:none;border-radius:60px;" onclick="setupGame()">
     スタート
   </button>
-  <p style="margin-top:30px;font-size:32px;color:#888;">12種類の写真を用意してください<br>作者；カプリコ</p>
+    <p style="margin-top:30px;font-size:32px;color:#888;">12種類の写真を用意してください<br>製作者；<a href="https://x.com/syokuennsu1">食縁水</a></font></div></p>
 </div>
 
 <div id="counter">第1回 / 全48回（1枚目）</div>
@@ -165,10 +170,12 @@
 
 <script>
 let peopleCount = 0;
-let baseImages = [];        // 元の12種類の画像URL（重複なし）
-let deck = [];              // ゲーム用デッキ（各画像が最大4枚入る）
+let images = [];
 let scores = [];
+let currentCount = 1;
 let round = 1;
+
+let photoPool = [];  // ★画像の順番リスト（12枚×4回＝48）
 
 function setupGame() {
   peopleCount = parseInt(document.getElementById('peopleInput').value);
@@ -180,42 +187,20 @@ function setupGame() {
   input.accept = 'image/*';
   input.onchange = e => {
     const files = Array.from(e.target.files);
+    if (files.length !== 12) return alert(`12枚ちょうど選んでください！（今${files.length}枚）`);
 
-    // 重複チェック（ファイル名＋サイズ＋更新日で判定）
-    const seen = new Set();
-    const uniqueFiles = [];
-    for (let f of files) {
-      const key = f.name + f.size + f.lastModified;
-      if (!seen.has(key)) {
-        seen.add(key);
-        uniqueFiles.push(f);
-      }
-    }
-
-    if (uniqueFiles.length !== 12) {
-      return alert(`12種類の写真をちょうど選んでください！（重複は除外されます：${uniqueFiles.length}種類）`);
-    }
-
-    // 12種類の画像URL作成
-    baseImages = uniqueFiles.map(file => URL.createObjectURL(file));
-
-    // デッキ作成：各画像を4枚ずつ入れる → 合計48枚
-    deck = [];
-    baseImages.forEach(src => {
-      for (let i = 0; i < 4; i++) {
-        deck.push(src);
-      }
-    });
-
-    // デッキをシャッフル
-    for (let i = deck.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [deck[i], deck[j]] = [deck[j], deck[i]];
-    }
-
+    images = files.map(file => URL.createObjectURL(file));
     scores = Array(peopleCount).fill(0);
 
-    // プレイヤーボタン作成
+    const thumbArea = document.getElementById('thumbnailArea');
+    thumbArea.innerHTML = '';
+    images.forEach(src => {
+      const img = document.createElement('img');
+      img.src = src;
+      img.className = 'thumb';
+      thumbArea.appendChild(img);
+    });
+
     const scoreArea = document.getElementById('scoreArea');
     scoreArea.innerHTML = '';
     for (let i = 0; i < peopleCount; i++) {
@@ -226,21 +211,11 @@ function setupGame() {
       scoreArea.appendChild(btn);
     }
 
-    // サムネイル12枚表示（3秒だけ）
-    const thumbArea = document.getElementById('thumbnailArea');
-    thumbArea.innerHTML = '';
-    baseImages.forEach(src => {
-      const img = document.createElement('img');
-      img.src = src;
-      img.className = 'thumb';
-      thumbArea.appendChild(img);
-    });
-
     document.getElementById('startScreen').style.display = 'none';
     document.getElementById('nextBtn').style.display = 'block';
+
     thumbArea.classList.add('show');
 
-    // 3秒後にサムネ消してゲーム開始
     setTimeout(() => {
       thumbArea.style.opacity = '0';
       setTimeout(() => {
@@ -254,44 +229,62 @@ function setupGame() {
 
 function startGame() {
   round = 1;
+  currentCount = 1;
+
+  // ★12枚×4回＝48回分のリストを作成
+  photoPool = [];
+  for (let i = 0; i < images.length; i++) {
+    for (let j = 0; j < 4; j++) {
+      photoPool.push(i);
+    }
+  }
+
+  // ★ランダムシャッフル
+  for (let i = photoPool.length - 1; i > 0; i--) {
+    const r = Math.floor(Math.random() * (i + 1));
+    [photoPool[i], photoPool[r]] = [photoPool[r], photoPool[i]];
+  }
+
   updateCounter();
-  showNextCard();
+  showNextPhoto();
 }
 
-function showNextCard() {
-  if (deck.length === 0) {
+// ★ 48回ぶんの順番で表示
+function showNextPhoto() {
+  const idx = photoPool[round - 1];
+
+  const preview = document.getElementById('preview');
+  preview.style.opacity = 0;
+
+  setTimeout(() => {
+    preview.src = images[idx];
+    preview.style.opacity = 1;
+  }, 350);
+}
+
+function getPoint(personIndex) {
+  scores[personIndex] += currentCount;
+  alert(`${String.fromCharCode(65 + personIndex)} さんが ${currentCount}点 獲得！`);
+  currentCount = 0;
+  updateCounter();
+}
+
+function updateCounter() {
+  document.getElementById('counter').textContent =
+    `第${round}回 / 全48回（${currentCount === 0 ? '得点済' : currentCount + '枚目'}）`;
+}
+
+document.getElementById('nextBtn').onclick = () => {
+  round++;
+  if (round > 48) {
     showResult();
     return;
   }
 
-  // デッキから1枚引く
-  const idx = Math.floor(Math.random() * deck.length);
-  const src = deck[idx];
-  deck.splice(idx, 1);  // 引いたカードは削除（重複最大4回保証）
-
-  const preview = document.getElementById('preview');
-  preview.style.opacity = 0;
-  setTimeout(() => {
-    preview.src = src;
-    preview.style.opacity = 1;
-  }, 350);
-
-  // カウンター更新（何枚目か表示）
-  const drawn = 48 - deck.length;
-  document.getElementById('counter').textContent = `第${drawn}回 / 全48回（${drawn}枚目）`;
-}
-
-function getPoint(personIndex) {
-  const currentCardNumber = 48 - deck.length;  // 今何枚目か
-  scores[personIndex] += currentCardNumber;
-  alert(`${String.fromCharCode(65 + personIndex)} さんが ${currentCardNumber}点 獲得！`);
-
-  // 次へボタンで次のカード
-  document.getElementById('nextBtn').onclick = showNextCard;
-  document.getElementById('nextBtn').textContent = '次へ';
-}
-
-document.getElementById('nextBtn').onclick = showNextCard;
+  currentCount = currentCount === 0 ? 1 : currentCount + 1;
+  updateCounter();
+  showNextPhoto();
+};
 
 function showResult() {
   document.getElementById('nextBtn').style.display = 'none';
@@ -307,8 +300,8 @@ function showResult() {
     const cls = idx === 0 ? 'rank1' : idx === 1 ? 'rank2' : idx === 2 ? 'rank3' : '';
     html += `<div class="${cls}">${r.person}さん　${r.score}点</div>`;
   });
-  document.getElementById('ranking').innerHTML = html;
 
+  document.getElementById('ranking').innerHTML = html;
   document.getElementById('resultScreen').style.display = 'flex';
 }
 </script>
